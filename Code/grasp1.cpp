@@ -1,20 +1,175 @@
 #include <iostream>
 #include <vector>
 #include <algorithm>
-#include <map>
 #include <string>
-#include <set>
+#include <map>
 
 using namespace std;
 
-// Function Define
-int mergeAndCount(vector<int> &data, int begin, int mid, int end);
+const int N = 20;
 
-int twoLayerCrossing(vector<string> &left, vector<string> &right, map<string, string> &adj);
+class Sideorder
+{
+private:
+    int up;
+    int down;
+public:
+    int count;
+    int crossNum;
+    vector<int> LeftUpSide;
+    vector<int> LeftDownSide;
+    vector<int> RightUpSide;
+    vector<int> RightDownSide;
+    vector<string> Leftup;
+    vector<string> Leftdown;
+    vector<string> Rightup;
+    vector<string> Rightdown;
+    map<string, string> adjup;
+    map<string, string> adjdown;
+    Sideorder()
+    {up = 10; down = 20; count = 0; crossNum = 0;}
+    ~Sideorder()
+    { }
+    vector<int> getUpSideOrder();
+    vector<int> getDownSideOrder();
+    int assignSide();
+    void printSide();
 
-int sortAndCount(vector<int> &data, int begin, int end);
+    int mergeAndCount(vector<int> &data, int begin, int mid, int end);
+    int twoLayerCrossing(vector<string> &leftup, vector<string> &rightup, vector<string> &leftdown,
+                         vector<string> &rightdown, map<string, string> &adjup, map<string, string> &adjdown);
+    int sortAndCount(vector<int> &upside, vector<int> &downside, int up_begin, int up_end, int down_begin, int down_end);
+    int subSortAndCount(vector<int> &data, int begin, int end);
 
-int mergeAndCount(vector<int> &data, int begin, int mid, int end)
+};
+
+vector<int> Sideorder::getUpSideOrder()
+{
+    vector<int> Upside;
+    for(int i = 0; i < up; i++)
+    {
+        Upside.push_back(i);
+    }
+    // Randomized the side order for top 10 pins
+    random_shuffle(Upside.begin(), Upside.end());
+
+    return Upside;
+}
+
+vector<int> Sideorder::getDownSideOrder()
+{
+    vector<int> Downside;
+    for(int i = up; i < down; i++)
+    {
+        Downside.push_back(i);
+    }
+    // Randomized the side order for 11-20 pins
+    random_shuffle(Downside.begin(), Downside.end());
+    return Downside;
+}
+
+int Sideorder::assignSide()
+{
+    // Give four sides orders
+    LeftUpSide = getUpSideOrder();
+    RightUpSide = getUpSideOrder();
+    LeftDownSide = getDownSideOrder();
+    RightDownSide = getDownSideOrder();
+
+
+    for(int i = 0; i < LeftUpSide.size(); i++)
+    {
+       string s1;
+       s1 = "lu";
+       s1.append(to_string(LeftUpSide[i]));
+       Leftup.push_back(s1);
+       // cout << Leftup[i] << " ";
+    }
+    // cout << endl;
+
+    for(int i = 0; i < RightUpSide.size(); i++)
+    {
+        string s1;
+        s1 = "ru";
+        s1.append(to_string(RightUpSide[i]));
+        Rightup.push_back(s1);
+        // cout << Rightup[i] << " ";
+    }
+    // cout << endl;
+
+    for(int i = 0; i < LeftDownSide.size(); i++)
+    {
+        string s1;
+        s1 = "ld";
+        s1.append(to_string(LeftDownSide[i]));
+        Leftdown.push_back(s1);
+        // cout << Leftdown[i] << " ";
+    }
+    // cout << endl;
+
+    for(int i = 0; i < RightDownSide.size(); i++)
+    {
+        string s1;
+        s1 = "rd";
+        s1.append(to_string(RightDownSide[i]));
+        Rightdown.push_back(s1);
+        // cout << Rightdown[i] << " ";
+    }
+    // cout << endl;
+    for(int i = 0; i < Leftup.size(); i++)
+    {
+        string tmp1;
+        string tmp2;
+        tmp1 = "lu" + to_string(i);
+        tmp2 = "ru" + to_string(i);
+        adjup[tmp1] = tmp2;
+        // cout << adjup[tmp1] << " ";
+    }
+    // cout << endl;
+    for(int i = Leftup.size(); i < Leftup.size() + Leftdown.size(); i++)
+    {
+        string tmp1;
+        string tmp2;
+        tmp1 = "ld" + to_string(i);
+        tmp2 = "rd" + to_string(i);
+        adjdown[tmp1] = tmp2;
+        // cout << adjdown[tmp1] << " ";
+    }
+    // cout << endl;
+
+    return twoLayerCrossing(Leftup, Rightup, Leftdown, Rightdown, adjup, adjdown);
+}
+
+void Sideorder::printSide()
+{
+    for(int i = 0; i < LeftUpSide.size(); i++)
+    {
+        cout << LeftUpSide[i] << " ";
+    }
+
+    cout << endl;
+
+    for(int i = 0; i < RightUpSide.size(); i++)
+    {
+        cout << RightUpSide[i] << " ";
+    }
+    cout << endl;
+
+    for(int i = 0; i < LeftDownSide.size() ; i++)
+    {
+        cout << LeftDownSide[i] << " ";
+    }
+
+    cout << endl;
+
+    for(int i = 0; i < RightDownSide.size(); i++)
+    {
+        cout << RightDownSide[i] << " ";
+    }
+    cout << endl;
+}
+
+int Sideorder::mergeAndCount(vector<int> &data, int begin, int mid, int end)
 {
     vector<int> merged;
     int result = 0;
@@ -22,7 +177,7 @@ int mergeAndCount(vector<int> &data, int begin, int mid, int end)
     int i = begin;
     int j = mid;
 
-    while (i < mid && j < end)
+    while(i < mid && j < end)
     {
         merged.push_back(min(data[i], data[j]));
         if(data[i] > data[j])
@@ -53,72 +208,101 @@ int mergeAndCount(vector<int> &data, int begin, int mid, int end)
     return result;
 }
 
-int sortAndCount(vector<int> &data, int begin, int end)
+int Sideorder::subSortAndCount(vector<int> &data, int begin, int end)
 {
-    if((end - begin) <= 1)
+    if ((end - begin) <= 1)
     {
         return 0;
     }
 
     int mid = (begin + end) / 2;
-    int leftCount = sortAndCount(data, begin, mid);
-    int rightCount = sortAndCount(data, mid, end);
+    int leftCount = subSortAndCount(data, begin, mid);
+    int rightCount = subSortAndCount(data, mid, end);
     int mergeCount = mergeAndCount(data, begin, mid, end);
 
     return leftCount + rightCount + mergeCount;
+
 }
 
-// Function Detail
-int twoLayerCrossing(vector<string> &left, vector<string> &right, map<string, string> &adj)
+int Sideorder::sortAndCount(vector<int> &upside, vector<int> &downside, int up_begin, int up_end, int down_begin, int down_end)
 {
-    vector<int> toSortAndCount;
-    map<string, int> rightNameOrder;
+    int up_result = 0;
+    int down_result = 0;
+    cout << "Upside Crossing numbers: ";
+    up_result = subSortAndCount(upside, up_begin, up_end);
+    cout << up_result << endl;
+    cout << "Downside Crossing numbers: ";
+    // down_result = subSortAndCount(downside, down_begin, down_end);
+    // cout << down_result << endl;
 
-    // Assign the order of right side vertices
-    for(int i = 0; i < right.size(); i++)
+    return up_result + down_result;
+}
+
+int Sideorder::twoLayerCrossing(vector<string> &leftup, vector<string> &rightup, vector<string> &leftdown,
+                     vector<string> &rightdown, map<string, string> &adjup, map<string, string> &adjdown)
+{
+    vector<int> toSortCountUp;
+    vector<int> toSortCountDown;
+    map<string, int> upNameOrder;
+    map<string, int> downNameOrder;
+
+    // Assign the order of the upside vertices
+    for(int i = 0; i < rightup.size(); i++)
     {
-        rightNameOrder[right[i]] = i;
+        upNameOrder[rightup[i]] = i;
     }
 
-    for(auto &leftName : left)
+    for(int i = 0; i < rightdown.size(); i++)
+    {
+        downNameOrder[rightdown[i]] = i;
+    }
+
+    for(auto &leftUpName : leftup)
     {
         vector<int> tmp;
-        string s1 = adj[leftName];
-        if(rightNameOrder.find(s1) != rightNameOrder.end())
+        string s1 = adjup[leftUpName];
+        if(upNameOrder.find(s1) != upNameOrder.end())
         {
-            tmp.push_back(rightNameOrder.at(s1));
+            tmp.push_back(upNameOrder.at(s1));
         }
-        toSortAndCount.insert(toSortAndCount.end(), tmp.begin(), tmp.end());
+        toSortCountUp.insert(toSortCountUp.end(), tmp.begin(), tmp.end());
     }
 
-    cout << "Array ";
-    for(auto num : toSortAndCount)
+    cout << "Up Array: ";
+    for(auto num : toSortCountUp)
     {
-        cout << " " << num;
+        cout << num << " ";
     }
     cout << endl;
 
-    return sortAndCount(toSortAndCount, 0, toSortAndCount.size());
+    for(auto &leftDownName : Leftdown)
+    {
+        vector<int> tmp;
+        string s1 = adjdown[leftDownName];
+        if(downNameOrder.find(s1) != downNameOrder.end())
+        {
+            tmp.push_back(downNameOrder.at(s1));
+        }
+        toSortCountDown.insert(toSortCountDown.end(), tmp.begin(), tmp.end());
+    }
+
+    cout << "Down Array: ";
+    for(auto num : toSortCountDown)
+    {
+        cout << num << " ";
+    }
+    cout << endl;
+
+    return sortAndCount(toSortCountUp, toSortCountDown, 0, toSortCountUp.size() - 1,
+                 toSortCountUp.size(), toSortCountUp.size() + toSortCountDown.size());
 }
+
 
 int main()
 {
-    vector<string> left = {"l9", "l2", "l10", "l3", "l1", "l6", "l8", "l4", "l5", "l7"};
-    vector<string> right = {"r7", "r5", "r10", "r8", "r4", "r1", "r2", "r9", "r6", "r3"};
-    map<string, string> adj;
-    adj["l1"] = {"r1"};
-    adj["l2"] = {"r2"};
-    adj["l3"] = {"r3"};
-    adj["l4"] = {"r4"};
-    adj["l5"] = {"r5"};
-    adj["l6"] = {"r6"};
-    adj["l7"] = {"r7"};
-    adj["l8"] = {"r8"};
-    adj["l9"] = {"r9"};
-    adj["l10"] = {"r10"};
-
-    int result = twoLayerCrossing(left, right, adj);
-    cout << "Result: " << result << endl;
+    Sideorder S1;
+    S1.assignSide();
+    // S1.printSide();
 
     return 0;
 }
